@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cipher workbench · Team 3</title>
-<meta name="description" content="Team 3 project: encrypt and decrypt with the Playfair, Rail Fence and Columnar Transposition ciphers, with every step shown.">
+<title>Team 3 Cipher Lab</title>
+<meta name="description" content="Team 3 CNS project: a hands-on lab for the Playfair, Rail Fence and Columnar Transposition ciphers, with every step shown.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Familjen+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -43,19 +43,43 @@
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.5; }
   .wrap { width: min(1180px, 100% - 2rem); margin-inline: auto; padding-block: 1.5rem 4rem; }
 
-  /* Masthead */
-  header.top {
-    display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
-    background: var(--mark); color: #0b2b26; border: 2px solid var(--line); border-radius: 6px;
-    box-shadow: 6px 6px 0 var(--shadow-c); padding: clamp(1.1rem, 3vw, 2rem); margin-bottom: 2rem;
-  }
-  h1 { font-size: clamp(2.2rem, 7vw, 4rem); line-height: .95; letter-spacing: -0.04em; font-weight: 700; margin: 0 0 .7rem; }
-  .lede { max-width: 56ch; margin: 0; font-size: 1.05rem; font-weight: 500; }
+  /* Top bar + hero */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; letter-spacing: -0.01em; }
+  .brand svg { flex: none; width: 2.1rem; height: 2.1rem; padding: .35rem; border-radius: 10px; background: #0b2b26; }
+  .brand .sub { font-weight: 500; color: var(--muted); }
   .theme-btn {
-    flex: none; border: 2px solid #0b2b26; background: #fff; color: #0b2b26; border-radius: 6px;
-    padding: .4rem .8rem; font: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; box-shadow: 3px 3px 0 #0b2b26;
+    border: 2px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px;
+    padding: .35rem .9rem; font: inherit; font-weight: 600; font-size: .85rem; cursor: pointer;
   }
-  .theme-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0b2b26; }
+  .theme-btn:hover { background: var(--mark); color: #0b2b26; }
+
+  .hero {
+    display: grid; gap: 1.75rem; align-items: center; margin-bottom: 2rem;
+    background: #0b2b26; color: #e4f6ef; border: 2px solid var(--line); border-radius: 22px;
+    padding: clamp(1.4rem, 4vw, 2.75rem);
+  }
+  @media (min-width: 820px) { .hero { grid-template-columns: minmax(0, 1fr) auto; gap: 3rem; } }
+  h1 { font-size: clamp(2.1rem, 6.2vw, 3.7rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 700; margin: 0 0 1rem; }
+  h1 span { color: #9fd3c3; font-weight: 500; }
+  .lede { max-width: 52ch; margin: 0 0 1.4rem; font-size: 1.05rem; color: #c3e4d9; }
+  .jump { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .jump button {
+    font: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; color: #e4f6ef; background: transparent;
+    border: 1.5px solid #5f8f82; border-radius: 999px; padding: .4rem 1rem;
+  }
+  .jump button:hover { background: #e4f6ef; color: #0b2b26; border-color: #e4f6ef; }
+  .jump button:focus-visible, .hero :focus-visible { outline-color: #ffd23f; }
+
+  .rails { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 5px; width: 100%; max-width: 19rem; }
+  .rails i {
+    aspect-ratio: 1; display: grid; place-items: center; border-radius: 6px; font-style: normal;
+    font-family: var(--mono); font-weight: 500; font-size: clamp(.8rem, 2.4vw, 1.05rem); color: #0b2b26;
+  }
+  .rails i.r0 { background: #ff5d73; }
+  .rails i.r1 { background: #ffd23f; }
+  .rails i.r2 { background: #7f95ff; }
+  .rails i.e { background: transparent; border: 1px dotted #3f6f63; }
 
   /* Sidebar layout */
   .shell { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -171,27 +195,47 @@
 
   /* Team */
   .team { margin-top: 3.5rem; }
-  .team h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; margin: 0 0 .25rem; display: inline-block; background: var(--blue); color: #fff; padding: .1rem .7rem; border: 2px solid var(--line); border-radius: 4px; box-shadow: 4px 4px 0 var(--shadow-c); }
-  .team .topics { color: var(--muted); margin: 1rem 0 1.25rem; font-weight: 500; }
-  .members { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  .members li { display: flex; align-items: center; gap: .8rem; background: var(--surface); border: 2px solid var(--line); border-radius: 6px; padding: .7rem .9rem; font-weight: 600; box-shadow: 4px 4px 0 var(--shadow-c); }
-  .avatar { flex: none; width: 2.6rem; height: 2.6rem; border-radius: 4px; display: grid; place-items: center; font-weight: 700; font-size: .95rem; background: var(--accent); color: #0b2b26; border: 2px solid var(--line); font-family: var(--mono); }
+  .team h2 { display: flex; align-items: baseline; flex-wrap: wrap; gap: .75rem; font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; margin: 0; }
+  .team .count { font-size: .9rem; font-weight: 600; letter-spacing: 0; border: 2px solid var(--line); border-radius: 999px; padding: .1rem .7rem; }
+  .team .topics { color: var(--muted); margin: .5rem 0 1.5rem; font-weight: 500; }
+  .members { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 3rem; border-top: 2px solid var(--line); }
+  @media (min-width: 640px) { .members { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1000px) { .members { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .members li { display: flex; align-items: center; gap: 1rem; padding: 1rem .25rem; border-bottom: 1px solid var(--line); font-size: 1.3rem; letter-spacing: -0.01em; line-height: 1.2; }
+  .nm { font-weight: 400; color: var(--muted); }
+  .nm b { font-weight: 700; color: var(--ink); }
+  .avatar { flex: none; width: 2.7rem; height: 2.7rem; border-radius: 50%; display: grid; place-items: center; font-weight: 500; font-size: .95rem; background: var(--accent); color: #0b2b26; border: 2px solid var(--line); font-family: var(--mono); }
   .members li:nth-child(3n+2) .avatar { background: var(--mark); }
-  .members li:nth-child(3n) .avatar { background: var(--blue); color: #fff; }
+  .members li:nth-child(3n) .avatar { background: #7f95ff; }
 
   @media (prefers-reduced-motion: no-preference) {
+    .avatar { transition: transform .15s; }
+    .members li:hover .avatar { transform: rotate(-10deg) scale(1.06); }
     .btn, .tabs button, .theme-btn { transition: transform .08s, box-shadow .08s, background-color .12s; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Cipher workbench</h1>
-      <p class="lede">Team 3 project: encrypt and decrypt with the Playfair cipher, Rail Fence cipher or Columnar Transposition cipher, with every step shown.</p>
+  <div class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4.5 7L12 19l4.5-7L21 5"/></svg>
+      <span>Team 3 <span class="sub">· CNS project</span></span>
     </div>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch colour theme">Theme</button>
+  </div>
+
+  <header class="hero">
+    <div>
+      <h1>Scramble a message.<br><span>Watch every step.</span></h1>
+      <p class="lede">A hands-on lab for three classic ciphers: Playfair, Rail Fence and Columnar Transposition. Enter text and a key, then follow the working from key to answer.</p>
+      <div class="jump" role="group" aria-label="Jump to a cipher">
+        <button type="button" data-jump="playfair">Playfair</button>
+        <button type="button" data-jump="railfence">Rail Fence</button>
+        <button type="button" data-jump="columnar">Columnar</button>
+      </div>
+    </div>
+    <div class="rails" aria-hidden="true"><i class="r0">W</i><i class="e"></i><i class="e"></i><i class="e"></i><i class="r0">E</i><i class="e"></i><i class="e"></i><i class="e"></i><i class="r0">C</i><i class="e"></i><i class="r1">E</i><i class="e"></i><i class="r1">R</i><i class="e"></i><i class="r1">D</i><i class="e"></i><i class="r1">S</i><i class="e"></i><i class="e"></i><i class="e"></i><i class="r2">A</i><i class="e"></i><i class="e"></i><i class="e"></i><i class="r2">I</i><i class="e"></i><i class="e"></i></div>
   </header>
 
   <div class="shell">
@@ -200,7 +244,7 @@
   </div>
 
   <section class="team" aria-labelledby="team-h">
-    <h2 id="team-h">Team 3</h2>
+    <h2 id="team-h">Team 3 <span class="count">6 members</span></h2>
     <p class="topics">Topics: Playfair cipher and transposition techniques (Rail Fence, Columnar)</p>
     <ul class="members" id="members"></ul>
   </section>
@@ -340,8 +384,11 @@ const initials = name => {
   const w = name.split(/\s+/);
   return (w.length > 1 ? w[0][0] + w[1][0] : name.slice(0, 2)).toUpperCase();
 };
-document.getElementById('members').innerHTML = TEAM
-  .map(n => `<li><span class="avatar" aria-hidden="true">${esc(initials(n))}</span>${esc(n)}</li>`).join('');
+document.getElementById('members').innerHTML = TEAM.map(n => {
+  const i = n.indexOf(' ');
+  const first = i < 0 ? n : n.slice(0, i), rest = i < 0 ? '' : n.slice(i + 1);
+  return `<li><span class="avatar" aria-hidden="true">${esc(initials(n))}</span><span class="nm"><b>${esc(first)}</b>${rest ? ' ' + esc(rest) : ''}</span></li>`;
+}).join('');
 
 const step = (n, title, body) => `<div class="step"><h3><span class="n">${n}</span>${title}</h3>${body}</div>`;
 
@@ -639,6 +686,13 @@ themeBtn.addEventListener('click', () => {
   const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.theme = dark ? 'light' : 'dark';
 });
+
+/* ----- hero quick links ----- */
+document.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => {
+  showTab(b.dataset.jump);
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('tabs').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+}));
 
 /* ----- init ----- */
 Object.values(panels).forEach(renderPanel);
