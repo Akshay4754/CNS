@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cipher workbench · Team 3</title>
+<meta name="description" content="Team 3 project: encrypt and decrypt with the Playfair, Rail Fence and Columnar Transposition ciphers, with every step shown.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Familjen+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #dff2ea;
+    --surface: #ffffff;
+    --surface-2: #effaf5;
+    --ink: #0b2b26;
+    --muted: #3f615a;
+    --line: #0b2b26;
+    --accent: #ff5d73;
+    --accent-ink: #0b2b26;
+    --accent-tint: #ffd6dc;
+    --mark: #ffd23f;
+    --mark-ink: #0b2b26;
+    --blue: #3d5afe;
+    --danger: #bf1230;
+    --shadow-c: #0b2b26;
+    --sans: "Familjen Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1a18; --surface: #14302c; --surface-2: #1a3b36; --ink: #e4f6ef; --muted: #9cc4b8;
+      --line: #6aa898; --accent: #ff7a8c; --accent-tint: #3a4a4a; --danger: #ff8a9a; --shadow-c: #04100e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1a18; --surface: #14302c; --surface-2: #1a3b36; --ink: #e4f6ef; --muted: #9cc4b8;
+    --line: #6aa898; --accent: #ff7a8c; --accent-tint: #3a4a4a; --danger: #ff8a9a; --shadow-c: #04100e;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.5; }
+  .wrap { width: min(1180px, 100% - 2rem); margin-inline: auto; padding-block: 1.5rem 4rem; }
+
+  /* Masthead */
+  header.top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    background: var(--mark); color: #0b2b26; border: 2px solid var(--line); border-radius: 6px;
+    box-shadow: 6px 6px 0 var(--shadow-c); padding: clamp(1.1rem, 3vw, 2rem); margin-bottom: 2rem;
+  }
+  h1 { font-size: clamp(2.2rem, 7vw, 4rem); line-height: .95; letter-spacing: -0.04em; font-weight: 700; margin: 0 0 .7rem; }
+  .lede { max-width: 56ch; margin: 0; font-size: 1.05rem; font-weight: 500; }
+  .theme-btn {
+    flex: none; border: 2px solid #0b2b26; background: #fff; color: #0b2b26; border-radius: 6px;
+    padding: .4rem .8rem; font: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; box-shadow: 3px 3px 0 #0b2b26;
+  }
+  .theme-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0b2b26; }
+
+  /* Sidebar layout */
+  .shell { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 900px) { .shell { grid-template-columns: 230px minmax(0, 1fr); } }
+
+  .tabs { display: flex; gap: .6rem; overflow-x: auto; padding: 0 .4rem .6rem 0; }
+  @media (min-width: 900px) { .tabs { flex-direction: column; overflow: visible; position: sticky; top: 1rem; padding: 0 .5rem 0 0; } }
+  .tabs button {
+    text-align: left; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; white-space: nowrap;
+    color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 6px;
+    padding: .75rem 1rem; box-shadow: 3px 3px 0 var(--shadow-c);
+  }
+  .tabs button:hover { background: var(--surface-2); }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow-c); }
+  @media (min-width: 900px) { .tabs button[aria-selected="true"] { transform: translate(6px, 0); box-shadow: -3px 3px 0 var(--shadow-c); } }
+
+  /* Workbench */
+  .workbench { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 1280px) { .workbench { grid-template-columns: minmax(0, 400px) minmax(0, 1fr); } }
+  .card { background: var(--surface); border: 2px solid var(--line); border-radius: 6px; padding: 1.25rem; box-shadow: 5px 5px 0 var(--shadow-c); }
+  .blurb { margin: 0 0 1rem; color: var(--muted); font-size: .98rem; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--line); border-radius: 6px; overflow: hidden; margin-bottom: 1rem; }
+  .seg button { border: 0; background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; padding: .55rem; cursor: pointer; }
+  .seg button + button { border-left: 2px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+  label, .lbl { display: block; font-size: .9rem; font-weight: 700; margin: .9rem 0 .35rem; }
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%; font-family: var(--mono); font-size: .95rem; color: var(--ink);
+    background: var(--surface-2); border: 2px solid var(--line); border-radius: 6px; padding: .65rem .75rem;
+  }
+  textarea { resize: vertical; min-height: 5.5rem; }
+  .keyrow { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .keyrow input { flex: 1 1 8rem; min-width: 0; }
+  .btn {
+    font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; color: var(--ink);
+    background: var(--surface); border: 2px solid var(--line); border-radius: 6px; padding: .5rem .85rem; box-shadow: 3px 3px 0 var(--shadow-c);
+  }
+  .btn:hover { background: var(--mark); color: #0b2b26; }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow-c); }
+  .check { display: flex; align-items: center; gap: .5rem; font-weight: 600; margin-top: .9rem; }
+  .check input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+  .err { min-height: 1.25rem; margin: .6rem 0 0; color: var(--danger); font-size: .9rem; font-weight: 600; }
+
+  .outhead { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-top: .4rem; }
+  .outhead .lbl { margin: 0; }
+  .outhead .btns { display: flex; gap: .5rem; }
+  .outhead .btn { padding: .3rem .65rem; font-size: .8rem; box-shadow: 2px 2px 0 var(--shadow-c); }
+  .out {
+    display: block; margin-top: .55rem; min-height: 3.2rem; padding: .8rem; border: 2px dashed var(--line); border-radius: 6px;
+    font-family: var(--mono); font-size: 1.1rem; font-weight: 500; letter-spacing: .08em;
+    background: var(--accent-tint); word-break: break-all; overflow-wrap: anywhere;
+  }
+  .out:empty::before { content: "Result appears here"; font-weight: 400; letter-spacing: 0; color: var(--muted); font-family: var(--sans); font-size: .95rem; }
+
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  :root[data-theme="dark"] :focus-visible { outline-color: var(--mark); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :focus-visible { outline-color: var(--mark); } }
+
+  /* Steps */
+  .step + .step { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px dashed var(--line); }
+  .step h3 { display: flex; align-items: center; gap: .6rem; margin: 0 0 .6rem; font-size: 1.1rem; letter-spacing: -0.01em; }
+  .step h3 .n {
+    flex: none; width: 1.7rem; height: 1.7rem; border-radius: 4px; display: grid; place-items: center;
+    background: var(--blue); color: #fff; font-size: .85rem; font-family: var(--mono); font-weight: 500; border: 2px solid var(--line);
+  }
+  .step p { margin: 0 0 .7rem; color: var(--muted); font-size: .95rem; }
+  .scroll { overflow-x: auto; padding: 0 6px 8px 0; }
+
+  /* Playfair */
+  .pfgrid { display: grid; grid-template-columns: repeat(5, 2.9rem); gap: 0; width: max-content; border: 2px solid var(--line); border-radius: 4px; }
+  .cell {
+    width: 2.9rem; height: 2.9rem; display: grid; place-items: center; border: 1px solid var(--line);
+    font-family: var(--mono); font-weight: 500; font-size: 1.1rem; background: var(--surface);
+  }
+  .cell.is-key { background: var(--accent-tint); font-weight: 600; }
+  .cell.from { background: var(--mark); color: #0b2b26; }
+  .cell.to { box-shadow: inset 0 0 0 3px var(--blue); }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .chip { font-family: var(--mono); font-weight: 500; background: var(--surface-2); border: 2px solid var(--line); border-radius: 4px; padding: .1rem .5rem; }
+  .fill { color: var(--accent); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  table.pairs { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  table.pairs th { text-align: left; font-weight: 700; padding: .35rem .5rem; font-size: .85rem; border-bottom: 2px solid var(--line); }
+  table.pairs td { padding: .5rem .5rem; border-bottom: 1px solid var(--line); }
+  table.pairs td:first-child, table.pairs td:last-child { font-family: var(--mono); font-weight: 500; }
+  table.pairs tbody tr { cursor: pointer; }
+  table.pairs tbody tr:hover { background: var(--surface-2); }
+  table.pairs tbody tr.on { background: var(--mark); color: #0b2b26; }
+  .maxh { max-height: 20rem; overflow: auto; border: 2px solid var(--line); border-radius: 6px; padding: 0 .4rem; }
+
+  /* Rail fence + columnar grids */
+  table.grid { border-collapse: collapse; }
+  table.grid th { font-size: .78rem; font-weight: 600; color: var(--muted); text-align: right; padding-right: .5rem; white-space: nowrap; }
+  table.grid td { width: 2.1rem; height: 2.1rem; min-width: 2.1rem; text-align: center; font-family: var(--mono); font-weight: 500; }
+  table.grid td.on { background: var(--accent-tint); border: 2px solid var(--line); }
+  table.grid td.off { background: transparent; border: 1px dotted var(--line); opacity: .55; }
+  table.grid.ct td { background: var(--surface); border: 1px solid var(--line); }
+  table.grid.ct td.pad { color: var(--accent); font-weight: 600; background: var(--surface-2); }
+  table.grid.ct thead td { background: var(--ink); color: var(--bg); border: 1px solid var(--line); }
+  table.grid.ct thead tr:nth-child(2) td { background: var(--mark); color: #0b2b26; font-size: .85rem; font-weight: 600; }
+  .lines { display: grid; gap: .5rem; }
+  .line { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr) auto; gap: .6rem; align-items: baseline; padding-bottom: .4rem; border-bottom: 1px dotted var(--line); }
+  .line .k { font-size: .88rem; font-weight: 600; }
+  .line code { font-family: var(--mono); font-weight: 500; letter-spacing: .08em; word-break: break-all; }
+  .line .c { font-size: .82rem; color: var(--muted); }
+  .answer { display: flex; flex-direction: column; gap: .35rem; background: var(--accent-tint); border: 2px solid var(--line); border-radius: 6px; padding: .8rem 1rem; box-shadow: 4px 4px 0 var(--shadow-c); }
+  .answer .al { font-size: .85rem; font-weight: 700; }
+  .answer code { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; letter-spacing: .08em; word-break: break-all; overflow-wrap: anywhere; }
+  table.grid.ct thead tr.orig td { background: var(--surface-2); color: var(--ink); font-size: .85rem; }
+  .line code:empty { display: none; }
+  .empty { color: var(--muted); font-size: .95rem; margin: 0; }
+
+  /* Team */
+  .team { margin-top: 3.5rem; }
+  .team h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); letter-spacing: -0.03em; margin: 0 0 .25rem; display: inline-block; background: var(--blue); color: #fff; padding: .1rem .7rem; border: 2px solid var(--line); border-radius: 4px; box-shadow: 4px 4px 0 var(--shadow-c); }
+  .team .topics { color: var(--muted); margin: 1rem 0 1.25rem; font-weight: 500; }
+  .members { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .members li { display: flex; align-items: center; gap: .8rem; background: var(--surface); border: 2px solid var(--line); border-radius: 6px; padding: .7rem .9rem; font-weight: 600; box-shadow: 4px 4px 0 var(--shadow-c); }
+  .avatar { flex: none; width: 2.6rem; height: 2.6rem; border-radius: 4px; display: grid; place-items: center; font-weight: 700; font-size: .95rem; background: var(--accent); color: #0b2b26; border: 2px solid var(--line); font-family: var(--mono); }
+  .members li:nth-child(3n+2) .avatar { background: var(--mark); }
+  .members li:nth-child(3n) .avatar { background: var(--blue); color: #fff; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn, .tabs button, .theme-btn { transition: transform .08s, box-shadow .08s, background-color .12s; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Cipher workbench</h1>
+      <p class="lede">Team 3 project: encrypt and decrypt with the Playfair cipher, Rail Fence cipher or Columnar Transposition cipher, with every step shown.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch colour theme">Theme</button>
+  </header>
+
+  <div class="shell">
+    <div class="tabs" role="tablist" aria-orientation="vertical" aria-label="Choose a cipher" id="tabs"></div>
+    <div id="panels"></div>
+  </div>
+
+  <section class="team" aria-labelledby="team-h">
+    <h2 id="team-h">Team 3</h2>
+    <p class="topics">Topics: Playfair cipher and transposition techniques (Rail Fence, Columnar)</p>
+    <ul class="members" id="members"></ul>
+  </section>
+</div>
+
+<!-- ============ Cipher logic (pure functions, no DOM) ============ -->
+<script id="core">
+const ALPHA = 'ABCDEFGHIKLMNOPQRSTUVWXYZ'; // 25 letters, J merged into I
+const letters = s => s.toUpperCase().replace(/[^A-Z]/g, '');
+const clean = s => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/* ---------- Playfair ---------- */
+function playfair(mode, text, key) {
+  const k = letters(key).replace(/J/g, 'I');
+  if (!k) return { error: 'Enter a keyword with at least one letter (A–Z).' };
+  const seen = new Set(), table = [];
+  for (const ch of k + ALPHA) if (!seen.has(ch)) { seen.add(ch); table.push(ch); }
+  const keyset = new Set(k);
+  const pos = ch => { const i = table.indexOf(ch); return [Math.floor(i / 5), i % 5]; };
+
+  const rawLetters = letters(text);
+  const src = rawLetters.replace(/J/g, 'I');
+  const pairs = [];
+  let inserted = 0, padded = false;
+
+  if (mode === 'enc') {
+    for (let i = 0; i < src.length;) {
+      const a = src[i], b = src[i + 1];
+      if (b === undefined) { pairs.push({ a, b: a === 'X' ? 'Q' : 'X', fill: true }); padded = true; i++; }
+      else if (a === b) { pairs.push({ a, b: a === 'X' ? 'Q' : 'X', fill: true }); inserted++; i++; }
+      else { pairs.push({ a, b, fill: false }); i += 2; }
+    }
+  } else {
+    for (let i = 0; i < src.length; i += 2) {
+      const a = src[i], b = src[i + 1];
+      if (b === undefined) { pairs.push({ a, b: 'X', fill: true }); padded = true; }
+      else pairs.push({ a, b, fill: false });
+    }
+  }
+
+  const d = mode === 'enc' ? 1 : 4; // +1 right/down, +4 ≡ −1 left/up (mod 5)
+  const steps = pairs.map(p => {
+    const [r1, c1] = pos(p.a), [r2, c2] = pos(p.b);
+    let ra, ca, rb, cb, rule;
+    if (r1 === r2) {
+      ra = r1; rb = r2; ca = (c1 + d) % 5; cb = (c2 + d) % 5;
+      rule = mode === 'enc' ? 'Same row: take the letter to the right' : 'Same row: take the letter to the left';
+    } else if (c1 === c2) {
+      ca = c1; cb = c2; ra = (r1 + d) % 5; rb = (r2 + d) % 5;
+      rule = mode === 'enc' ? 'Same column: take the letter below' : 'Same column: take the letter above';
+    } else {
+      ra = r1; rb = r2; ca = c2; cb = c1;
+      rule = 'Rectangle: swap the columns';
+    }
+    return { ...p, from: [r1 * 5 + c1, r2 * 5 + c2], to: [ra * 5 + ca, rb * 5 + cb], rule,
+             ea: table[ra * 5 + ca], eb: table[rb * 5 + cb] };
+  });
+
+  return {
+    output: steps.map(s => s.ea + s.eb).join(''),
+    table, keyset, steps, inserted, padded,
+    jChanged: rawLetters.includes('J'), keyClean: k
+  };
+}
+
+/* ---------- Rail Fence ---------- */
+function railfence(mode, text, key) {
+  const rails = parseInt(key, 10);
+  if (!Number.isInteger(rails) || rails < 2 || rails > 20) return { error: 'Rails must be a whole number from 2 to 20.' };
+  const t = clean(text), len = t.length;
+  const pat = [];
+  let r = 0, dir = 1;
+  for (let i = 0; i < len; i++) {
+    pat.push(r);
+    if (r === 0) dir = 1; else if (r === rails - 1) dir = -1;
+    r += dir;
+  }
+  const counts = Array(rails).fill(0);
+  pat.forEach(x => counts[x]++);
+
+  let plain, cipher, rows;
+  if (mode === 'enc') {
+    plain = t;
+    rows = Array.from({ length: rails }, () => '');
+    [...t].forEach((ch, i) => { rows[pat[i]] += ch; });
+    cipher = rows.join('');
+  } else {
+    cipher = t;
+    let p = 0;
+    rows = counts.map(c => { const s = t.slice(p, p + c); p += c; return s; });
+    const ptr = Array(rails).fill(0);
+    plain = pat.map(x => rows[x][ptr[x]++]).join('');
+  }
+  return { output: mode === 'enc' ? cipher : plain, rails, pat, plain, cipher, rows, counts, len };
+}
+
+/* ---------- Columnar Transposition ---------- */
+function columnar(mode, text, key, pad) {
+  const k = letters(key);
+  if (k.length < 2) return { error: 'Use a keyword with at least 2 letters.' };
+  const n = k.length;
+  // read order: columns sorted by key letter; equal letters keep left-to-right order
+  const order = [...k].map((ch, i) => ({ ch, i }))
+    .sort((a, b) => a.ch < b.ch ? -1 : a.ch > b.ch ? 1 : a.i - b.i).map(o => o.i);
+  const rank = []; order.forEach((col, r) => { rank[col] = r + 1; });
+
+  let t = clean(text), grid, plain, cipher, padCount = 0;
+  if (mode === 'enc') {
+    if (pad && t.length % n) { padCount = n - (t.length % n); t += 'X'.repeat(padCount); }
+    plain = t;
+    const rows = Math.ceil(t.length / n);
+    grid = Array.from({ length: rows }, (_, r) => Array.from({ length: n }, (_, c) => t[r * n + c] || ''));
+    cipher = order.map(c => grid.map(row => row[c]).join('')).join('');
+  } else {
+    cipher = t;
+    const L = t.length, rows = Math.ceil(L / n), full = L % n === 0 ? n : L % n;
+    grid = Array.from({ length: rows }, () => Array(n).fill(''));
+    let p = 0;
+    order.forEach(c => {
+      const h = c < full ? rows : rows - 1;
+      for (let r = 0; r < h; r++) grid[r][c] = t[p++];
+    });
+    plain = grid.map(r => r.join('')).join('');
+  }
+  const segments = order.map(c => ({ col: c, letter: k[c], text: grid.map(row => row[c]).join('') }));
+  return { output: mode === 'enc' ? cipher : plain, k, n, order, rank, grid, segments, padCount, plain, cipher };
+}
+</script>
+
+<!-- ============ UI ============ -->
+<script id="ui">
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+const TEAM = ['Aihshas Srivastava', 'Aishwarya K S', 'Ajeet Kumar', 'Akanksha', 'Akshaay B S', 'Akshay Anand'];
+const initials = name => {
+  const w = name.split(/\s+/);
+  return (w.length > 1 ? w[0][0] + w[1][0] : name.slice(0, 2)).toUpperCase();
+};
+document.getElementById('members').innerHTML = TEAM
+  .map(n => `<li><span class="avatar" aria-hidden="true">${esc(initials(n))}</span>${esc(n)}</li>`).join('');
+
+const step = (n, title, body) => `<div class="step"><h3><span class="n">${n}</span>${title}</h3>${body}</div>`;
+
+/* ----- visualisations ----- */
+const answerStep = (n, label, text, note) => step(n, 'Answer',
+  `${note ? `<p>${note}</p>` : ''}<div class="answer"><span class="al">${label}</span><code>${esc(text)}</code></div>`);
+
+/* ----- Playfair ----- */
+function vizPlayfair(r, mode) {
+  const cells = r.table.map((ch, i) => `<div class="cell${r.keyset.has(ch) ? ' is-key' : ''}" data-i="${i}">${ch}</div>`).join('');
+  const s1 = step(1, 'Build the 5×5 table',
+    `<p>Keyword letters first (duplicates dropped), then the rest of the alphabet. I and J share one cell.</p>
+     <div class="scroll"><div class="pfgrid" role="img" aria-label="Playfair 5 by 5 table">${cells}</div></div>`);
+
+  let s2, s3 = '', s4 = '';
+  if (!r.steps.length) {
+    s2 = step(2, 'Split into pairs', `<p class="empty">Type a message to see it split into letter pairs.</p>`);
+  } else {
+    const chips = r.steps.map(p => `<span class="chip">${p.a}${p.fill ? `<span class="fill">${p.b}</span>` : p.b}</span>`).join('');
+    const notes = [];
+    if (r.jChanged) notes.push('J was replaced by I.');
+    if (mode === 'enc') {
+      if (r.inserted) notes.push(`${r.inserted} filler letter${r.inserted > 1 ? 's' : ''} inserted between a double letter (underlined).`);
+      if (r.padded) notes.push('An odd letter at the end was paired with a filler letter (underlined).');
+    } else if (r.padded) notes.push('Ciphertext had an odd length, so a final X was added.');
+    s2 = step(2, 'Split into pairs',
+      `<p>${mode === 'enc' ? 'Double letters in a pair get a filler letter between them.' : 'Ciphertext is read in pairs as it is.'} ${esc(notes.join(' '))}</p><div class="chips">${chips}</div>`);
+    const rows = r.steps.map((p, i) => `<tr tabindex="0" data-p="${i}"><td>${p.a}${p.fill ? `<span class="fill">${p.b}</span>` : p.b}</td><td>${p.rule}</td><td>${p.ea}${p.eb}</td></tr>`).join('');
+    s3 = step(3, mode === 'enc' ? 'Encrypt each pair' : 'Decrypt each pair',
+      `<p>Select a row to see its letters on the table: yellow cells are the input pair, outlined cells are the result.</p>
+       <div class="maxh"><table class="pairs"><thead><tr><th>Pair</th><th>Rule</th><th>${mode === 'enc' ? 'Cipher' : 'Plain'}</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+    s4 = answerStep(4, mode === 'enc' ? 'Ciphertext' : 'Plaintext', r.output,
+      mode === 'enc' ? 'Join the encrypted pairs.' : 'Join the decrypted pairs. Filler letters (X or Q) may need removing by hand.');
+  }
+  return s1 + s2 + s3 + s4;
+}
+
+/* ----- Rail Fence ----- */
+function vizRail(r, mode) {
+  if (!r.len) return step(1, 'Lay out the zigzag', `<p class="empty">Type a message to see it laid out across ${r.rails} rails.</p>`);
+  const grid = show => {
+    let body = '';
+    for (let rail = 0; rail < r.rails; rail++) {
+      let tds = '';
+      for (let i = 0; i < r.len; i++) tds += r.pat[i] === rail ? `<td class="on">${show ? r.plain[i] : '•'}</td>` : `<td class="off"></td>`;
+      body += `<tr><th scope="row">Rail ${rail + 1}</th>${tds}</tr>`;
+    }
+    return `<div class="scroll"><table class="grid" aria-label="Rail fence layout">${body}</table></div>`;
+  };
+  const lines = showText => r.rows.map((s, i) => `<div class="line"><span class="k">Rail ${i + 1}</span><code>${showText ? (esc(s) || '—') : ''}</code><span class="c">${r.counts[i]} letter${r.counts[i] === 1 ? '' : 's'}</span></div>`).join('');
+
+  if (mode === 'enc') {
+    return step(1, 'Write the message in a zigzag',
+        `<p>Letters go down to rail ${r.rails}, then back up, repeating across the line.</p>${grid(true)}`)
+      + step(2, 'Read each rail left to right',
+        `<p>Take the letters of each rail, starting with the top rail.</p><div class="lines">${lines(true)}</div>`)
+      + answerStep(3, 'Ciphertext', r.output, 'Join the rails from top to bottom.');
+  }
+  return step(1, 'Mark the zigzag path and count letters',
+      `<p>The path is fixed by the number of rails (${r.rails}) and the message length (${r.len}). Each dot is one letter.</p>${grid(false)}<div class="lines" style="margin-top:.75rem">${lines(false)}</div>`)
+    + step(2, 'Cut the ciphertext into rails',
+      `<p>Take that many letters from the ciphertext for each rail, top rail first.</p><div class="lines">${lines(true)}</div>`)
+    + step(3, 'Fill the grid',
+      `<p>Write each rail's letters left to right along its path.</p>${grid(true)}`)
+    + answerStep(4, 'Plaintext', r.output, 'Read the grid left to right, one letter per column.');
+}
+
+/* ----- Columnar Transposition ----- */
+function ctTable(r, cols, mode, label, sorted) {
+  const padStart = mode === 'enc' ? r.plain.length - r.padCount : Infinity;
+  const h1 = cols.map(c => `<td>${r.k[c]}</td>`).join('');
+  const h2 = cols.map((c, j) => `<td>${sorted ? j + 1 : r.rank[c]}</td>`).join('');
+  const h3 = sorted ? `<tr class="orig"><th scope="row">Original column</th>${cols.map(c => `<td>${c + 1}</td>`).join('')}</tr>` : '';
+  const body = r.grid.map((row, ri) => `<tr><th scope="row">Row ${ri + 1}</th>${cols.map(c =>
+    `<td class="${ri * r.n + c >= padStart ? 'pad' : ''}">${row[c]}</td>`).join('')}</tr>`).join('');
+  return `<div class="scroll"><table class="grid ct" aria-label="${label}"><thead><tr><th scope="row">${sorted ? 'Sorted key' : 'Key'}</th>${h1}</tr><tr><th scope="row">Read order</th>${h2}</tr>${h3}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+function vizColumnar(r, mode) {
+  if (!r.grid.length) return step(1, 'Write the key and the message', `<p class="empty">Type a message to see the grid for key ${esc(r.k)}.</p>`);
+  const orig = [...Array(r.n).keys()];
+  const segLines = r.segments.map((s, i) => `<div class="line"><span class="k">${i + 1}. Column ${s.col + 1}</span><code>${esc(s.text) || '—'}</code><span class="c">key ${s.letter}</span></div>`).join('');
+  const rowLines = r.grid.map((row, i) => `<div class="line"><span class="k">Row ${i + 1}</span><code>${esc(row.join('')) || '—'}</code><span class="c">${row.join('').length} letters</span></div>`).join('');
+
+  if (mode === 'enc') {
+    return step(1, 'Write the key and the message',
+        `<p>Put the key across the top, then write the message under it row by row. Read order shows each letter's alphabetical rank.${r.padCount ? ` ${r.padCount} filler X${r.padCount > 1 ? 's were' : ' was'} added to complete the last row (highlighted).` : ''}</p>${ctTable(r, orig, 'enc', 'Key and message grid', false)}`)
+      + step(2, 'Sort the key letters with their columns',
+        `<p>Reorder the columns so the key letters are alphabetical. Repeated letters keep their left-to-right order.</p>${ctTable(r, r.order, 'enc', 'Sorted key grid', true)}`)
+      + step(3, 'Read the columns',
+        `<p>Read each column top to bottom, moving left to right across the sorted table.</p><div class="lines">${segLines}</div>`)
+      + answerStep(4, 'Ciphertext', r.output, 'Join the columns in read order.');
+  }
+  return step(1, 'Sort the key letters and fill the columns',
+      `<p>Sort the key letters. The ciphertext is cut into column pieces in that order, and each piece is written down its column.</p><div class="lines" style="margin-bottom:.75rem">${segLines}</div>${ctTable(r, r.order, 'dec', 'Sorted key grid', true)}`)
+    + step(2, 'Put the columns back in key order',
+      `<p>Move every column back to its original position under the key.</p>${ctTable(r, orig, 'dec', 'Original key grid', false)}`)
+    + step(3, 'Read row by row',
+      `<p>Read the grid across each row, top to bottom.</p><div class="lines">${rowLines}</div>`)
+    + answerStep(4, 'Plaintext', r.output, 'Join the rows. Trailing X letters may be filler.');
+}
+
+/* ----- cipher definitions ----- */
+const CIPHERS = [
+  { id: 'playfair', label: 'Playfair', run: playfair, viz: vizPlayfair,
+    blurb: 'Encrypts letters in pairs using a 5×5 table built from a keyword. Only letters are used, and J is treated as I.',
+    keyLabel: 'Keyword', keyType: 'text', keyPh: 'e.g. MONARCHY', defKey: 'MONARCHY', defText: 'Hide the gold in the tree stump',
+    random: () => pick(['MONARCHY', 'PLAYFAIR', 'CIPHER', 'SECURITY', 'NETWORK', 'KEYWORD', 'PROTOCOL', 'CRYPTO']) },
+  { id: 'railfence', label: 'Rail Fence', run: railfence, viz: vizRail,
+    blurb: 'Writes the message in a zigzag across a set number of rails, then reads it off rail by rail. Letters and digits only.',
+    keyLabel: 'Number of rails', keyType: 'number', keyPh: '2 to 20', defKey: '3', defText: 'We are discovered flee at once',
+    random: () => String(2 + Math.floor(Math.random() * 5)) },
+  { id: 'columnar', label: 'Columnar Transposition', run: columnar, viz: vizColumnar,
+    blurb: 'Writes the message in rows under a keyword, then reads the columns in alphabetical order of the key letters. Letters and digits only.',
+    keyLabel: 'Keyword', keyType: 'text', keyPh: 'e.g. ZEBRAS', defKey: 'ZEBRAS', defText: 'We are discovered flee at once',
+    random: () => pick(['ZEBRAS', 'CRYPTO', 'SECRET', 'NETWORK', 'HACKER', 'SHIELD', 'BRIDGE', 'MATRIX']),
+    extra: id => `<label class="check"><input type="checkbox" id="${id}-pad" checked> Pad the last row with X when encrypting</label>` }
+];
+
+function panelHTML(c) {
+  const id = c.id;
+  return `<section id="panel-${id}" role="tabpanel" aria-labelledby="tab-${id}" hidden>
+    <div class="workbench">
+      <div class="card">
+        <p class="blurb">${c.blurb}</p>
+        <div class="seg" role="group" aria-label="Mode">
+          <button type="button" data-mode="enc" aria-pressed="true">Encrypt</button>
+          <button type="button" data-mode="dec" aria-pressed="false">Decrypt</button>
+        </div>
+        <label for="${id}-text" data-role="textlabel">Plaintext</label>
+        <textarea id="${id}-text" rows="4" spellcheck="false" autocomplete="off"></textarea>
+        <label for="${id}-key">${c.keyLabel}</label>
+        <div class="keyrow">
+          <input id="${id}-key" type="${c.keyType}" ${c.keyType === 'number' ? 'min="2" max="20" inputmode="numeric"' : 'spellcheck="false" autocapitalize="characters"'} placeholder="${c.keyPh}" autocomplete="off">
+          <button type="button" class="btn" data-act="random">Random key</button>
+          <button type="button" class="btn" data-act="clear">Clear</button>
+        </div>
+        ${c.extra ? c.extra(id) : ''}
+        <p class="err" role="alert" data-role="err"></p>
+        <div class="outhead">
+          <span class="lbl" data-role="outlabel">Ciphertext</span>
+          <span class="btns">
+            <button type="button" class="btn" data-act="copy">Copy</button>
+            <button type="button" class="btn" data-act="reuse">Use as input</button>
+          </span>
+        </div>
+        <output class="out" data-role="out" aria-live="polite"></output>
+      </div>
+      <div class="card" data-role="viz"></div>
+    </div>
+  </section>`;
+}
+
+const panels = {};
+const tabsEl = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+CIPHERS.forEach(c => {
+  tabsEl.insertAdjacentHTML('beforeend',
+    `<button type="button" role="tab" id="tab-${c.id}" aria-controls="panel-${c.id}" aria-selected="false" tabindex="-1">${c.label}</button>`);
+  panelsEl.insertAdjacentHTML('beforeend', panelHTML(c));
+});
+
+CIPHERS.forEach(c => {
+  const root = document.getElementById('panel-' + c.id);
+  const p = panels[c.id] = {
+    c, root, mode: 'enc',
+    text: root.querySelector('textarea'),
+    key: root.querySelector('.keyrow input'),
+    pad: root.querySelector(`#${c.id}-pad`),
+    err: root.querySelector('[data-role=err]'),
+    out: root.querySelector('[data-role=out]'),
+    viz: root.querySelector('[data-role=viz]'),
+    tl: root.querySelector('[data-role=textlabel]'),
+    ol: root.querySelector('[data-role=outlabel]'),
+    segBtns: root.querySelectorAll('.seg button')
+  };
+  // each mode keeps its own text: plaintext for Encrypt, ciphertext for Decrypt
+  p.texts = { enc: c.defText, dec: c.run('enc', c.defText, c.defKey, true).output };
+  p.text.value = p.texts.enc;
+  p.key.value = c.defKey;
+
+  const render = () => renderPanel(p);
+  p.text.addEventListener('input', render);
+  p.key.addEventListener('input', render);
+  if (p.pad) p.pad.addEventListener('change', render);
+
+  p.segBtns.forEach(b => b.addEventListener('click', () => setMode(p, b.dataset.mode)));
+
+  root.querySelector('[data-act=random]').addEventListener('click', () => { p.key.value = c.random(); render(); });
+  root.querySelector('[data-act=clear]').addEventListener('click', () => { p.text.value = ''; p.key.value = ''; render(); p.text.focus(); });
+  root.querySelector('[data-act=copy]').addEventListener('click', e => copyText(p.out.textContent, e.currentTarget));
+  root.querySelector('[data-act=reuse]').addEventListener('click', () => {
+    const v = p.out.textContent;
+    if (!v) return;
+    const next = p.mode === 'enc' ? 'dec' : 'enc';
+    p.texts[p.mode] = p.text.value;
+    p.texts[next] = v;
+    setMode(p, next, true);
+  });
+});
+
+function setMode(p, mode, skipSave) {
+  if (!skipSave) p.texts[p.mode] = p.text.value;
+  p.mode = mode;
+  p.text.value = p.texts[mode];
+  p.segBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+  renderPanel(p);
+}
+
+function renderPanel(p) {
+  const { c, mode } = p;
+  p.tl.textContent = mode === 'enc' ? 'Plaintext' : 'Ciphertext';
+  p.ol.textContent = mode === 'enc' ? 'Ciphertext' : 'Plaintext';
+  const r = c.run(mode, p.text.value, p.key.value, p.pad ? p.pad.checked : false);
+  if (r.error) {
+    p.err.textContent = r.error;
+    p.out.textContent = '';
+    p.viz.innerHTML = `<p class="empty">Fix the key above to see the steps.</p>`;
+    return;
+  }
+  p.err.textContent = '';
+  p.out.textContent = r.output;
+  p.viz.innerHTML = c.viz(r, mode);
+  if (c.id === 'playfair') wirePairs(p);
+}
+
+function wirePairs(p) {
+  const rows = [...p.viz.querySelectorAll('tbody tr')];
+  const cells = [...p.viz.querySelectorAll('.pfgrid .cell')];
+  const stepsData = playfair(p.mode, p.text.value, p.key.value).steps;
+  const activate = i => {
+    cells.forEach(el => el.classList.remove('from', 'to'));
+    rows.forEach(el => el.classList.remove('on'));
+    const s = stepsData[i];
+    if (!s) return;
+    s.from.forEach(ix => cells[ix].classList.add('from'));
+    s.to.forEach(ix => cells[ix].classList.add('to'));
+    rows[i].classList.add('on');
+  };
+  rows.forEach((row, i) => {
+    row.addEventListener('click', () => activate(i));
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(i); }
+    });
+  });
+  activate(0);
+}
+
+async function copyText(text, btn) {
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = 'Copied';
+  setTimeout(() => { btn.textContent = old; }, 1400);
+}
+
+/* ----- tabs ----- */
+function showTab(id, focus) {
+  CIPHERS.forEach(c => {
+    const on = c.id === id;
+    const t = document.getElementById('tab-' + c.id);
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById('panel-' + c.id).hidden = !on;
+    if (on && focus) t.focus();
+  });
+  history.replaceState(null, '', '#' + id);
+}
+tabsEl.addEventListener('click', e => {
+  const t = e.target.closest('[role=tab]');
+  if (t) showTab(t.id.replace('tab-', ''));
+});
+tabsEl.addEventListener('keydown', e => {
+  const ids = CIPHERS.map(c => c.id);
+  const cur = ids.indexOf(document.querySelector('[role=tab][aria-selected=true]').id.replace('tab-', ''));
+  let next = null;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (cur + 1) % ids.length;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (cur - 1 + ids.length) % ids.length;
+  if (e.key === 'Home') next = 0;
+  if (e.key === 'End') next = ids.length - 1;
+  if (next !== null) { e.preventDefault(); showTab(ids[next], true); }
+});
+
+/* ----- theme ----- */
+const themeBtn = document.getElementById('themeBtn');
+themeBtn.addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+
+/* ----- init ----- */
+Object.values(panels).forEach(renderPanel);
+const startTab = CIPHERS.some(c => '#' + c.id === location.hash) ? location.hash.slice(1) : CIPHERS[0].id;
+showTab(startTab);
+</script>
+</body>
+</html>
